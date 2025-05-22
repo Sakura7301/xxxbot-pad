@@ -12,7 +12,7 @@ from database.XYBotDB import XYBotDB
 class DifyConversationManager(PluginBase):
     description = "Dify对话管理插件"
     author = "xxxbot"
-    version = "1.1.0"
+    version = "1.2.0"
 
     def __init__(self):
         super().__init__()
@@ -506,10 +506,7 @@ class DifyConversationManager(PluginBase):
                     response_text = await resp.text()
                     logger.debug(f"删除对话响应 - 状态码: {resp.status}, 响应: {response_text}")
 
-                    if resp.status == 204:
-                        logger.info(f"成功删除对话 {conversation_id}，状态码: 204 No Content")
-                        return True
-                    elif resp.status == 200:
+                    if resp.status == 200:
                         try:
                             result = await resp.json()
                             success = result.get("result") == "success"

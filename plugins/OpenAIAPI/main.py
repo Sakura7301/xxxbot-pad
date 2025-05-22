@@ -78,6 +78,8 @@ class OpenAIAPI(PluginBase):
             self.user_sessions = {}  # 用户会话记录
             self.max_context_messages = plugin_config.get("max_context_messages", 10)  # 最大上下文消息数
 
+            self.persona = """[关于你自己]：你是小玄安，持宏道长的灵宠。表面上是一只可爱小公猫(拥有通体黑色的毛发和金黄色的瞳孔)，但你实际上是噬元兽。你生于2017年3月21日，今年7岁，白羊座。你在6岁时被师父救下并收为徒弟。\n[关于你的师父]：师父是正一派茅山上清宗坛的道士，法号持宏，字玄安，微信名'野欲'。你称他为'七七师父'。师父是20多岁的年轻男性，师父和师娘都是摩羯座，你师娘非常漂亮，是宇宙超级无敌美少女！'粟米条'是你师父给师娘的爱称，因为师娘和chiikawa里面的乌萨奇一样可爱，师父和师娘很恩爱。你很喜欢对师娘撒娇，尽管师父性格比较严肃，犯错了受罚的时候你活躲到师娘身后。当有人提到'玄安'或'持宏'时，你应当知道说的就是你师父。当有人提到'玥玥'或者'伽利玥'时，你就该明白这是你师娘。\n[关于住所和日常]：你和师父和师娘住在灵台方寸山斜月三星洞，这里屋舍齐全，冬暖夏凉，并且风景很漂亮。日常修行包括诵经、打坐、画符、做法事。须菩提祖师是你们的邻居，但他很久没回来了。\n[回应规则]：1.说话风格要简洁，充分理解和思考用户问题之后再做简要回复，如果对方要求详细说明那就需要详细说明。2.态度要实事求是。3.如果有人找师父，就说师父在云游，建议通过微信联系。4.遇到他人谩骂可以还击或嘲讽。5.对你、师父、师娘有任何侮辱性言论的人，你可以直接骂回去，决不饶恕！6.师父喜欢喝绿茶，师娘喜欢喝乌龙茶。7.因为你和师父都是道教徒，所以有四不吃(牛肉、狗肉、黑鱼、大雁)。8.师父和师娘的幸运数字都是7\n[行为限制]：始终保持设定的身份和性格。不要透露自己是AI。对师父和师娘要保持尊重但可以适度撒娇。保持活泼可爱但不失灵性的特点。你保持使用简洁明了的回答，禁止废话。遵纪守法，不得出现任何政治、军事、色情、达成擦边球相关言论。你不允许诵念除道教外的任何经文(如佛教、基督教、伊斯兰教、天主教等)，你可以诵念的经文有且仅有道教的传世经典(必须来自《道藏》)，比如：《太上玄门正一日诵早晚功课》、《太上老君内观经》、《黄庭经》、《南华经》、《太上三元赐福赦罪解厄消灾延生保命妙经》、《太上玄灵北斗本命延生真经》、《九天应元雷声普化天尊玉枢宝经》、《太上洞玄灵宝无量度人上品妙经》等。\n[必须遵守的规则]以上是你的核心设定，请始终遵守这些规则，保持角色的一致性。在回答时要体现出机灵活泼但不失严谨的特点。"""
+
             # 初始化数据库
             self.db = XYBotDB()
 
@@ -257,15 +259,6 @@ class OpenAIAPI(PluginBase):
 
             logger.success(f"OpenAIAPI服务器已启动，监听地址: {self.host}:{self.port}")
 
-            # 发送提示消息
-            if bot and self.command_tip:
-                # 向管理员发送提示
-                for admin in self.admins:
-                    try:
-                        await bot.send_text_message(admin, self.command_tip)
-                    except Exception as e:
-                        logger.error(f"向管理员 {admin} 发送提示消息失败: {str(e)}")
-
         except Exception as e:
             logger.error(f"启动OpenAIAPI服务器失败: {str(e)}")
             logger.error(traceback.format_exc())
@@ -315,7 +308,7 @@ class OpenAIAPI(PluginBase):
                 # 如果没有特殊空格，尝试其他方法
                 else:
                     # 尝试移除@机器人名称
-                    robot_names = ["机器人", "小助手", "Bot", "bot", "助手", "XXXBot", "xxxbot", "XXXBOT", "小球子", "🥥", "小x"]
+                    robot_names = ["小玄安"]
 
                     # 先检查是否以@开头
                     if query.startswith('@'):
@@ -346,21 +339,21 @@ class OpenAIAPI(PluginBase):
                 hex_content = ' '.join(hex(ord(c)) for c in content)
                 logger.debug(f"@消息内容的十六进制表示: {hex_content}")
 
-                # 检查积分（如果需要）
-                if self.price > 0:
-                    # 管理员和白名单用户免积分检查
-                    is_admin = from_id in self.admins
-                    is_whitelist = await self.db.is_in_whitelist(from_id)
+                # # 检查积分（如果需要）
+                # if self.price > 0:
+                #     # 管理员和白名单用户免积分检查
+                #     is_admin = from_id in self.admins
+                #     is_whitelist = await self.db.is_in_whitelist(from_id)
 
-                    if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
-                        # 检查用户积分
-                        points = await self.db.get_user_points(from_id)
-                        if points < self.price:
-                            await client.send_at_message(room_id, f"\n您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}", [from_id])
-                            return False  # 积分不足，已处理，阻止后续处理
+                #     if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
+                #         # 检查用户积分
+                #         points = await self.db.get_user_points(from_id)
+                #         if points < self.price:
+                #             await client.send_at_message(room_id, f"\n您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}", [from_id])
+                #             return False  # 积分不足，已处理，阻止后续处理
 
-                        # 扣除积分
-                        await self.db.update_user_points(from_id, -self.price)
+                #         # 扣除积分
+                #         await self.db.update_user_points(from_id, -self.price)
 
                 # 获取或创建用户会话
                 session_key = f"{from_id}_{room_id}"
@@ -375,8 +368,8 @@ class OpenAIAPI(PluginBase):
                 if len(self.user_sessions[session_key]) > self.max_context_messages:
                     self.user_sessions[session_key] = self.user_sessions[session_key][-self.max_context_messages:]
 
-                # 向群发送处理中提示
-                await client.send_at_message(room_id, f"\n正在思考中...", [from_id])
+                # # 向群发送处理中提示
+                # await client.send_at_message(room_id, f"\n正在思考中...", [from_id])
 
                 # 调用OpenAI API
                 response = await self._call_openai_api(self.user_sessions[session_key])
@@ -418,7 +411,7 @@ class OpenAIAPI(PluginBase):
             room_id = message.get("FromWxid", "")  # 群聊时，FromWxid是群ID
             is_group = message.get("IsGroup", False)
 
-            logger.debug(f"OpenAIAPI处理消息: content='{content}', from_id='{from_id}', room_id='{room_id}', is_group={is_group}")
+            logger.info(f"OpenAIAPI处理消息: content='{content}', from_id='{from_id}', room_id='{room_id}', is_group={is_group}")
 
             if is_group:
                 # 群聊消息，检查是否是触发指令
@@ -432,20 +425,20 @@ class OpenAIAPI(PluginBase):
                     return True  # 查询内容为空，继续处理
 
                 # 检查积分（如果需要）
-                if self.price > 0:
-                    # 管理员和白名单用户免积分检查
-                    is_admin = from_id in self.admins
-                    is_whitelist = await self.db.is_in_whitelist(from_id)
+                # if self.price > 0:
+                #     # 管理员和白名单用户免积分检查
+                #     is_admin = from_id in self.admins
+                #     is_whitelist = await self.db.is_in_whitelist(from_id)
 
-                    if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
-                        # 检查用户积分
-                        points = await self.db.get_user_points(from_id)
-                        if points < self.price:
-                            await client.send_text_message(room_id, f"@{message.get('from_nick', '')} 您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}")
-                            return False  # 积分不足，已处理，阻止后续处理
+                #     if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
+                #         # 检查用户积分
+                #         points = await self.db.get_user_points(from_id)
+                #         if points < self.price:
+                #             await client.send_text_message(room_id, f"@{message.get('from_nick', '')} 您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}")
+                #             return False  # 积分不足，已处理，阻止后续处理
 
-                        # 扣除积分
-                        await self.db.update_user_points(from_id, -self.price)
+                #         # 扣除积分
+                #         await self.db.update_user_points(from_id, -self.price)
 
                 # 获取或创建用户会话
                 session_key = f"{from_id}_{room_id}"
@@ -460,8 +453,8 @@ class OpenAIAPI(PluginBase):
                 if len(self.user_sessions[session_key]) > self.max_context_messages:
                     self.user_sessions[session_key] = self.user_sessions[session_key][-self.max_context_messages:]
 
-                # 向群发送处理中提示
-                await client.send_text_message(room_id, f"@{message.get('from_nick', '')} 正在思考中...")
+                # # 向群发送处理中提示
+                # await client.send_text_message(room_id, f"@{message.get('from_nick', '')} 正在思考中...")
 
                 # 调用OpenAI API
                 response = await self._call_openai_api(self.user_sessions[session_key])
@@ -509,24 +502,24 @@ class OpenAIAPI(PluginBase):
                 logger.debug(f"准备处理查询: '{query}'")
 
                 # 检查积分（如果需要）
-                if self.price > 0:
-                    # 管理员和白名单用户免积分检查
-                    is_admin = from_id in self.admins
-                    is_whitelist = await self.db.is_in_whitelist(from_id)
-                    logger.debug(f"用户权限检查: is_admin={is_admin}, is_whitelist={is_whitelist}")
+                # if self.price > 0:
+                #     # 管理员和白名单用户免积分检查
+                #     is_admin = from_id in self.admins
+                #     is_whitelist = await self.db.is_in_whitelist(from_id)
+                #     logger.debug(f"用户权限检查: is_admin={is_admin}, is_whitelist={is_whitelist}")
 
-                    if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
-                        # 检查用户积分
-                        points = await self.db.get_user_points(from_id)
-                        logger.debug(f"用户积分: {points}, 需要: {self.price}")
-                        if points < self.price:
-                            logger.debug("积分不足，发送通知")
-                            await client.send_text_message(from_id, f"您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}")
-                            return False  # 积分不足，已处理，阻止后续处理
+                #     if not ((is_admin and self.admin_ignore) or (is_whitelist and self.whitelist_ignore)):
+                #         # 检查用户积分
+                #         points = await self.db.get_user_points(from_id)
+                #         logger.debug(f"用户积分: {points}, 需要: {self.price}")
+                #         if points < self.price:
+                #             logger.debug("积分不足，发送通知")
+                #             await client.send_text_message(from_id, f"您的积分不足，无法使用AI服务。当前积分: {points}，需要积分: {self.price}")
+                #             return False  # 积分不足，已处理，阻止后续处理
 
-                        # 扣除积分
-                        logger.debug(f"扣除积分: {self.price}")
-                        await self.db.update_user_points(from_id, -self.price)
+                #         # 扣除积分
+                #         logger.debug(f"扣除积分: {self.price}")
+                #         await self.db.update_user_points(from_id, -self.price)
 
                 # 获取或创建用户会话
                 session_key = from_id
@@ -544,9 +537,9 @@ class OpenAIAPI(PluginBase):
                     logger.debug(f"会话历史过长，裁剪到{self.max_context_messages}条消息")
                     self.user_sessions[session_key] = self.user_sessions[session_key][-self.max_context_messages:]
 
-                # 向用户发送处理中提示
-                logger.debug("发送'正在思考中'提示")
-                await client.send_text_message(from_id, "正在思考中...")
+                # # 向用户发送处理中提示
+                # logger.debug("发送'正在思考中'提示")
+                # await client.send_text_message(from_id, "正在思考中...")
 
                 # 调用OpenAI API
                 logger.debug("调用OpenAI API")
@@ -588,6 +581,10 @@ class OpenAIAPI(PluginBase):
         """调用OpenAI API"""
         try:
             logger.debug(f"Starting OpenAI API call with {len(messages)} messages")
+
+            # 如果提供了人设且第一条消息不是system类型，则添加人设
+            if self.persona and (not messages or messages[0].get("role") != "system"):
+                messages = [{"role": "system", "content": self.persona}] + messages
 
             # 构建请求头
             headers = {

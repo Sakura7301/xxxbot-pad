@@ -1,14 +1,24 @@
 [OpenAIAPI]
 enable = true                           # 是否启用此功能
-api-key = ""                            # 后端API密钥，如果后端需要
-base-url = "https://api.openai.com/v1"  # 后端API地址，可以是OpenAI或兼容的API服务
+api-key = "sk-zqPJLrxC6CWrhcxZ89565e69Be2a4a09B4F002582f520bB5"                            # 后端API密钥，如果后端需要
+base-url = "http://sakuraduck.cn:59530/v1"  # 后端API地址，可以是OpenAI或兼容的API服务
 
 # 模型配置
-default-model = "gemini-2.0-flash"         # 默认使用的模型
+default-model = "glm-4-plus"         # 默认使用的模型
 available-models = [                    # 可用模型列表
+    "glm-4",
+    "glm-4-plus",
+    "glm-4-flashx",
     "gpt-3.5-turbo",
-    "gpt-4",
-    "gpt-4-turbo"
+    "glm-zero",
+    "glm-zero-preview",
+    "yi-34b",
+    "yi-34b-chat-0205",
+    "yi-34b-chat-200k",
+    "yi-vl",
+    "deepseek-r1",
+    "deepseek-r1-nocache",
+    "deepseek-r1-search"
 ]
 
 # 插件配置
@@ -16,20 +26,19 @@ port = 8100                             # API服务端口
 host = "0.0.0.0"                        # API服务主机
 command-tip = """-----OpenAI API-----
 💬OpenAI API服务已启动
-访问地址: http://你的IP:8100
 支持标准OpenAI API格式
 可用于接入各种支持OpenAI API的应用
 """
 
 # 微信消息设置
-trigger_prefix = "/ai"                  # 触发前缀，群聊中必须使用此前缀
-private_chat_all = true                # 是否在私聊中处理所有消息，设为true会响应所有私聊消息
+trigger_prefix = "小玄安"               # 触发前缀，群聊中必须使用此前缀
+private_chat_all = true                 # 是否在私聊中处理所有消息，设为true会响应所有私聊消息
 max_context_messages = 10               # 最大上下文消息数量
 
 
 # 积分系统
-price = 0                               # 每次使用扣除的积分，0表示不扣除
-admin_ignore = true                     # 管理员是否忽略积分扣除
+price = 10                              # 每次使用扣除的积分，0表示不扣除
+admin_ignore = false                     # 管理员是否忽略积分扣除
 whitelist_ignore = true                 # 白名单用户是否忽略积分扣除
 
 # Http代理设置
