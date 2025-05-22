@@ -10,14 +10,11 @@ resource/avatars
 admin/cache
 admin/admin_server_status.txt
 admin/bot_instance_status.txt
-database/contacts.db
-database/keyval.db
-database/message.db
-database/xybot.db
+database/*.db
 data/
 WechatAPI/Client3/login_stat.json
 main_config.toml
-
+version.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
